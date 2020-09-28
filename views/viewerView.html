@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LogistiX Manager System</title>
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap-vue.min.css" />
+    
+    <script src="../../js/vue.min.js"></script>
+    <script src="../../js/bootstrap-vue.min.js"></script>
+    <script src="../../js/bootstrap-vue-icons.min.js"></script>
+    <script src="../../js/axios.min.js"></script>
+</head>
+<body>
+    <div style="width: 98%; margin: auto;" id="app">
+        <div class="row">
+            <div class="col-12">
+                <div>
+                    <b-navbar variant="primary" type="dark">
+                        <b-navbar-brand tag="h1">LogistiX</b-navbar-brand>
+                    </b-navbar>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <side_nav :list="assetClassList"></side_nav>
+            </div>
+            <div class="col-9">
+                <template v-if="currentClassRefId!=''">
+                    <operation_board></operation_board>
+                    <template v-if="assetList!=''&&assetList!=null">
+                        <show_table :list='assetList'></show_table>
+                    </template>
+                    <template v-else>
+                        <h1>No data</h1>
+                    </template>
+                </template>
+                <template v-else>
+                    <h1>Please choose a class</h1>
+                </template>
+                
+            </div>
+        </div>
+    </div>
+
+<!--Side Nav-->
+<template id='side_nav'>
+    <div style="margin: 10px auto 10px auto;">
+        <b-card>
+            <b-nav vertical tab>
+                <b-nav-item disabled>AssetClassList</b-nav-item>
+                <template v-for="asset_class in list">
+                    <b-nav-item @click='findAssetList($event)' :class_ref_id='asset_class.classRefId'>{{asset_class.className}}</b-nav-item>
+                </template>
+                <b-nav-item disabled>-------------------------</b-nav-item>
+                <b-nav-item @click='viewRecord()'>View Record</b-nav-item>
+            </b-nav>
+        </b-card>
+    </div>
+</template>
+
+<!--Operation Board-->
+<template id='operation_board'>
+    <div style="margin: 10px auto 10px auto;">
+        <b-card variant='secondary'>
+            <div class="row">
+                <div class="col-8">
+                    <b-input-group>
+                        <template v-slot:prepend>
+                            <b-dropdown text="Dropdown" variant="info" ref='dropdown'>
+                              <template v-for='item in options'>
+                                  <b-dropdown-item @click='chooseQueryWay($event)' :option_id='item.optionId'>{{item.lable}}</b-dropdown-item>
+                              </template>
+                            </b-dropdown>
+                          </template>
+                        <b-form-input v-model='searchInfo'></b-form-input>
+                        <template v-slot:append>
+                            <b-button variant='info' @click='searchAssetList()'>Search</b-button>
+                        </template>
+                    </b-input-group>  
+                </div>
+                <div class="col-2"></div>
+                <div class="col-2"></div>
+            </div>
+        </b-card>
+    </div>
+</template>
+
+<!--Table-->
+<template id='show_table'>
+    <div>
+        <b-table :fields="fields" :items="items">
+            
+            <template v-slot:cell(entityTrackCode)="data">
+                <b class="text-info">{{ data.item.entityTrackCode }}</b>
+            </template>
+      
+            <template v-slot:cell(entityName)="data">
+                <b class="text-info">{{ data.item.entityName }}</b>
+            </template>
+      
+            <template v-slot:cell(entityDefaultPosition)="data">
+                <b class="text-info">{{ data.item.entityDefaultPosition }}</b>
+            </template>
+      
+            <template v-slot:cell(entityCurrentPosition)="data">
+                <b class="text-info">{{ data.item.entityCurrentPosition}}</b>
+            </template>
+
+            <template v-slot:cell(entityStatus)="data">
+                <b class="text-info">{{ data.item.entityStatus }}</b>
+            </template>
+
+            <template v-slot:cell(entityDescription)="data">
+                <b class="text-info">{{ data.item.entityDescription }}</b>
+            </template>
+
+            <template v-slot:cell(entityComment)="data">
+                <b class="text-info">{{ data.item.entityComment }}</b>
+            </template>
+
+        </b-table>
+    </div>
+</template>
+
+</body>
+
+<script>
+    Vue.component('side_nav',{
+        template: '#side_nav',
+        props:['list'],
+        methods:{
+            findAssetList:function(e){
+                let classRefId = e.path[1].getAttribute('class_ref_id');
+                this.$parent.findAssetList(classRefId);
+            },
+            viewRecord:function(){
+                window.location.href="./recordPage";
+            },
+        }
+    });
+    Vue.component('operation_board',{
+        template: '#operation_board',
+        data(){
+            return{
+                options:[
+                    {
+                        optionId:0,
+                        option:'entityTrackCode',
+                        lable:'Search by TrackCode'
+                    },
+                    {
+                        optionId:1,
+                        option:'entityName',
+                        lable:'Search by Name'
+                    },
+                    {
+                        optionId:2,
+                        option:'entityDefaultPosition',
+                        lable:'Search by DefaultPosition'
+                    },
+                    {
+                        optionId:3,
+                        option:'entityCurrentPosition',
+                        lable:'Search by CurrentPosition'
+                    },
+                    {
+                        optionId:4,
+                        option:'entityStatus',
+                        lable:'Search by Status'
+                    }
+                ],
+                optionId:'',
+                searchInfo:''
+            }
+        },
+        methods:{
+            chooseQueryWay:function(e){
+                let optionId = e.path[0].getAttribute('option_id');
+                this.optionId = optionId;
+                this.$refs['dropdown'].$refs.toggle.innerHTML=this.options[optionId].lable;
+            },
+            searchAssetList:function(){
+                if(this.optionId==''){
+                    alert('Please choose Search Way firstly!');
+                }
+                let query = {};
+                query[this.options[this.optionId].option]=this.searchInfo;
+                this.$parent.searchAssetList(query,function(data){
+                    if(!data.flag){
+                        alert('Operation Failed!\n'+data.message);
+                    }
+                });
+            }
+        }
+    });
+
+    Vue.component('show_table',{
+        template: '#show_table',
+        props:['list'],
+        data(){
+            return{
+                fields:[
+                    {key:'entityTrackCode',label:'TrackCode'},
+                    {key:'entityName',label:'Name'},
+                    {key:'entityDefaultPosition',label:'Default Position'},
+                    {key:'entityCurrentPosition',label:'Current Position'},
+                    {key:'entityStatus',label:'Status'},
+                    {key:'entityDescription',label:'Description'},
+                    {key:'entityComment',label:'Comment'},
+                ],
+                items:this.list
+            }
+        },
+        watch:{
+            list:function(){
+                this.items = this.list;
+            }
+        },
+        methods:{
+            getItem:function(data){
+                return JSON.stringify(data);
+            }
+        }
+    });    
+
+    var vm = new Vue({
+        el:'#app',
+        data:{
+           assetClassList:'',
+           assetList:'',
+           currentClassRefId:'',
+           updatedAsset:''
+        },
+        methods:{
+            findAssetClassList:function(){
+                axios
+                .get('./assetClass')
+                .then(res=>{
+                    this.assetClassList = res.data.data;
+                })
+                .catch(function(error){
+                    console.log(error);
+                });
+            },
+            findAssetList:function(classRefId){
+                this.currentClassRefId = classRefId;
+                axios
+                .get('./asset/'+classRefId)
+                .then(res=>{
+                    this.assetList = res.data.data;
+                })
+                .catch(function(error){
+                    console.log(error);
+                });
+            },
+            searchAssetList:function(query,callback){
+                axios
+                .post('./asset/condition',JSON.stringify(query),{
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                })
+                .then(res => {
+                    if(res.data.flag){
+                        this.assetList = res.data.data;
+                    }
+                    callback(res.data);
+                })
+                .catch(err => {
+                    console.log(err); 
+                })
+            },
+        },
+        mounted () {
+            this.findAssetClassList();
+        }
+    });
+</script>
+</html>

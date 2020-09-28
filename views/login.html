@@ -1,0 +1,76 @@
+<!DOCTYPE html SYSTEM "http://www.thymeleaf.org/dtd/xhtml1-strict-thymeleaf-4.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Test login interface</title>
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap-vue.min.css" />
+    
+    <script src="../../js/vue.min.js"></script>
+    <script src="../../js/bootstrap-vue.min.js"></script>
+    <script src="../../js/bootstrap-vue-icons.min.js"></script>
+    <script src="../../js/axios.min.js"></script>
+</head>
+<body>
+<div id="app" class="container">
+    <div class="row clearfix child">
+        <div class="col-md-12 column">
+            <h1 class="text-center">
+                Test
+            </h1>
+            <div class="row clearfix">
+                <div class="column">
+                    <form role="form">
+                        <div class="form-group">
+                            <label for="usernameInput">用户名</label><input type="text" v-model="username" class="form-control" id="usernameInput" />
+                        </div>
+                        <div class="form-group">
+                            <label for="passwordInput">密码</label><input type="password" v-model="password" class="form-control" id="passwordInput" />
+                        </div>
+                        <div class="form-group">
+                            <a class="btn btn-default" @click="login">提交</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+<script>
+    new Vue({
+        el:'#app',
+        data:{
+            username:'',
+            password:'',
+        },
+        methods: {
+            login:function(){
+                if(this.username===''||this.password===''||this.random===''){
+                    alert("用户名或密码不能为空！");
+                    return;
+                }
+                axios
+                .post("./loginByManager.action",{
+                    username:this.username,
+                    password:this.password
+                },{
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                })
+                .then(function(response){
+                    console.log(response.data);
+                    if(response.data.flag){
+                        window.location.href='../view/manager/managerPage';
+                    }
+                })
+                .catch(function (error) { // 请求失败处理
+                    console.log(error);
+                });
+            }
+        }
+    });
+</script>
+</html>

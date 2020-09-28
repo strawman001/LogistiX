@@ -1,0 +1,153 @@
+const AssetClass = require('../model/AssetClass');
+const AssetEntity = require('../model/AssetEntity');
+const Log = require('../util/log');
+
+class AssetController{
+    addAsset=function(assetInfo,req,res){
+        AssetEntity.create(assetInfo,function(err,assetEntity){
+            if(!err){
+                res.json({
+                    flag:true
+                });
+                Log.createRecord('Add Asset:\n'+JSON.stringify(assetEntity),req.session.user);
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+    deleteAsset=function(assetTrackCode,req,res){
+        AssetEntity.deleteOne({entityTrackCode:assetTrackCode},function(err){
+            if(!err){
+                res.json({
+                    flag:true
+                });
+                Log.createRecord('Delete Asset:'+assetTrackCode,req.session.user);
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+    updateAsset=function(assetInfo,req,res){
+        AssetEntity.updateOne({entityTrackCode:assetInfo.entityTrackCode},{$set:assetInfo},function(err){
+            if(!err){
+                res.json({
+                    flag:true
+                });
+                Log.createRecord('Update Asset:\n'+JSON.stringify(assetInfo),req.session.user);
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+    findAsset=function(classRefId,req,res){
+        AssetEntity.find({classRefId:classRefId},function(err,assetList){
+            if(!err){
+                res.json({
+                    flag:true,
+                    data:assetList
+                });
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+    findAssetByCondition=function(query,req,res){
+        AssetEntity.find(query,function(err,assetList){
+            if(!err){
+                res.json({
+                    flag:true,
+                    data:assetList
+                });
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+    addAssetClass = function(assetClassInfo,req,res){
+        AssetClass.create(assetClassInfo,function(err,assetClass){
+            if(!err){
+                res.json({
+                    flag:true
+                });
+                Log.createRecord('Add Asset Class:\n'+JSON.stringify(assetClass),req.session.user);
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+    deleteAssetClass=function(classRefId,req,res){
+        AssetClass.deleteOne({classRefId:classRefId},function(err){
+            if(!err){
+                AssetEntity.deleteMany({classRefId:classRefId},function(err2){
+                    if(!err2){
+                        res.json({
+                            flag:true
+                        });
+                        Log.createRecord('Delete Asset Class:'+classRefId,req.session.user);
+                    }else{
+                        res.json({
+                            flag:false,
+                            message:err2
+                        });
+                    }
+                });
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+    findAssetClass=function(req,res){
+        AssetClass.find(function(err,assetClassList){
+            if(!err){
+                res.json({
+                    flag:true,
+                    data:assetClassList
+                });
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+
+    findRecord=function(req,res){
+        Log.findRecord(function(err,recordList){
+            if(!err){
+                res.json({
+                    flag:true,
+                    data:recordList
+                });
+            }else{
+                res.json({
+                    flag:false,
+                    message:err
+                });
+            }
+        });
+    }
+}
+
+module.exports = AssetController;

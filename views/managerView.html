@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LogistiX Manager System</title>
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap-vue.min.css" />
+    
+    <script src="../../js/vue.min.js"></script>
+    <script src="../../js/bootstrap-vue.min.js"></script>
+    <script src="../../js/bootstrap-vue-icons.min.js"></script>
+    <script src="../../js/axios.min.js"></script>
+</head>
+<body>
+    <div style="width: 98%; margin: auto;" id="app">
+        <div class="row">
+            <div class="col-12">
+                <div>
+                    <b-navbar variant="primary" type="dark">
+                        <b-navbar-brand tag="h1">LogistiX</b-navbar-brand>
+                    </b-navbar>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <side_nav :list="assetClassList"></side_nav>
+            </div>
+            <div class="col-9">
+                <template v-if="currentClassRefId!=''">
+                    <operation_board></operation_board>
+                    <template v-if="assetList!=''&&assetList!=null">
+                        <show_table :list='assetList'></show_table>
+                    </template>
+                    <template v-else>
+                        <h1>No data</h1>
+                    </template>
+                </template>
+                <template v-else>
+                    <h1>Please choose a class</h1>
+                </template>
+                
+            </div>
+        </div>
+        <add_asset_class></add_asset_class>
+        <add_asset_entity></add_asset_entity>
+        <update_asset_entity :entity='updatedAsset'></update_asset_entity>
+    </div>
+
+<!--Side Nav-->
+<template id='side_nav'>
+    <div style="margin: 10px auto 10px auto;">
+        <b-card>
+            <b-nav vertical tab>
+                <b-nav-item disabled>AssetClassList</b-nav-item>
+                <template v-for="asset_class in list">
+                    <b-nav-item @click='findAssetList($event)' :class_ref_id='asset_class.classRefId'>{{asset_class.className}}</b-nav-item>
+                </template>
+                <b-nav-item disabled>-------------------------</b-nav-item>
+                <b-nav-item @click='viewRecord()'>View Record</b-nav-item>
+                <b-nav-item @click='toggleAddAssetClass()'>Add New Class</b-nav-item>
+            </b-nav>
+        </b-card>
+    </div>
+</template>
+
+<!--Operation Board-->
+<template id='operation_board'>
+    <div style="margin: 10px auto 10px auto;">
+        <b-card variant='secondary'>
+            <div class="row">
+                <div class="col-8">
+                    <b-input-group>
+                        <template v-slot:prepend>
+                            <b-dropdown text="Dropdown" variant="info" ref='dropdown'>
+                              <template v-for='item in options'>
+                                  <b-dropdown-item @click='chooseQueryWay($event)' :option_id='item.optionId'>{{item.lable}}</b-dropdown-item>
+                              </template>
+                            </b-dropdown>
+                          </template>
+                        <b-form-input v-model='searchInfo'></b-form-input>
+                        <template v-slot:append>
+                            <b-button variant='info' @click='searchAssetList()'>Search</b-button>
+                        </template>
+                    </b-input-group>  
+                </div>
+                <div class="col-2"><a class="btn btn-success" @click='toggleAddAsset()'>Add New Asset</a></div>
+                <div class="col-2"><a class="btn btn-danger" @click='deleteAssetClass()'>Delete Class</a></div>
+            </div>
+        </b-card>
+    </div>
+</template>
+
+<!--Table-->
+<template id='show_table'>
+    <!-- <span v-for="item in items">{{item}}</span> -->
+    <div>
+        <b-table :fields="fields" :items="items">
+            
+            <template v-slot:cell(entityTrackCode)="data">
+                <b class="text-info">{{ data.item.entityTrackCode }}</b>
+            </template>
+      
+            <template v-slot:cell(entityName)="data">
+                <b class="text-info">{{ data.item.entityName }}</b>
+            </template>
+      
+            <template v-slot:cell(entityDefaultPosition)="data">
+                <b class="text-info">{{ data.item.entityDefaultPosition }}</b>
+            </template>
+      
+            <template v-slot:cell(entityCurrentPosition)="data">
+                <b class="text-info">{{ data.item.entityCurrentPosition}}</b>
+            </template>
+
+            <template v-slot:cell(entityStatus)="data">
+                <b class="text-info">{{ data.item.entityStatus }}</b>
+            </template>
+
+            <template v-slot:cell(entityDescription)="data">
+                <b class="text-info">{{ data.item.entityDescription }}</b>
+            </template>
+
+            <template v-slot:cell(entityComment)="data">
+                <b class="text-info">{{ data.item.entityComment }}</b>
+            </template>
+
+            <template v-slot:cell(operations)="data">
+               <a href="#" :trackCode='data.item.entityTrackCode' @click='deleteAsset($event)'>Delete</a>/<a href="#" :item='getItem(data.item)' @click='updateAsset($event)'>Update</a>
+            </template>
+        </b-table>
+    </div>
+</template>
+
+<!--Add Asset Class-->
+<template id='add_asset_class'>
+    <b-modal id="addAssetClassModal" title="Add New Asset Class">
+        <b-form-group
+        label="Class Name:"
+        label-for="add_asset_class_name"
+        >
+        <b-form-input
+            id="add_asset_class_name"
+            v-model="assetClass.className"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <b-form-group
+        label="Class Description"
+        label-for="add_asset_class_description"
+        >
+        <b-form-input
+            id="add_asset_class_description"
+            v-model="assetClass.classDescription"
+            type="text"
+        ></b-form-input>
+        </b-form-group>
+
+        <template v-slot:modal-footer="{}">
+            <b-button size="sm" variant="success" @click="addAssetClass()">
+              Submit
+            </b-button>
+            <b-button size="sm" variant="danger" @click="cancel()">
+              Cancel
+            </b-button>
+        </template>
+    </b-modal>
+</template>
+
+<!--Add Asset Entity-->
+<template id='add_asset_entity'>
+    <b-modal id="addAssetModal" title="Add New Asset Entity">
+        <b-form-group
+        label="Asset Name:"
+        label-for="add_asset_name"
+        >
+        <b-form-input
+            id="add_asset_name"
+            v-model="assetEntity.entityName"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <b-form-group
+        label="Default Position:"
+        label-for="add_default_position"
+        >
+        <b-form-input
+            id="add_default_position"
+            v-model="assetEntity.entityDefaultPosition"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <b-form-group
+        label="Current Position:"
+        label-for="add_current_position"
+        >
+        <b-form-input
+            id="add_current_position"
+            v-model="assetEntity.entityCurrentPosition"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <b-form-group 
+        label="Status" 
+        label-for="add_asset_status">
+            <b-form-select
+              id="add_asset_status"
+              v-model="assetEntity.entityStatus"
+              :options="statusList"
+              required
+            ></b-form-select>
+        </b-form-group>
+
+        <b-form-group
+        label="Description:"
+        label-for="add_asset_description"
+        >
+        <b-form-input
+            id="add_asset_description"
+            v-model="assetEntity.entityDescription"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <b-form-group
+        label="Comment:"
+        label-for="add_asset_comment"
+        >
+        <b-form-input
+            id="add_asset_comment"
+            v-model="assetEntity.entityComment"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <template v-slot:modal-footer="{}">
+            <b-button size="sm" variant="success" @click="addAsset()">
+              Submit
+            </b-button>
+            <b-button size="sm" variant="danger" @click="cancel()">
+              Cancel
+            </b-button>
+        </template>
+    </b-modal>
+</template>
+
+<!--Update Asset Entity-->
+<template id='update_asset_entity'>
+    <b-modal id="updateAssetModal">
+        <b-form-group
+        label="Default Position:"
+        label-for="add_default_position"
+        >
+        <b-form-input
+            id="add_default_position"
+            v-model="assetEntity.entityDefaultPosition"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <b-form-group
+        label="Current Position:"
+        label-for="add_current_position"
+        >
+        <b-form-input
+            id="add_current_position"
+            v-model="assetEntity.entityCurrentPosition"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <b-form-group 
+        label="Status" 
+        label-for="add_asset_status">
+            <b-form-select
+              id="add_asset_status"
+              v-model="assetEntity.entityStatus"
+              :options="statusList"
+              required
+            ></b-form-select>
+        </b-form-group>
+
+        <b-form-group
+        label="Description:"
+        label-for="add_asset_description"
+        >
+        <b-form-input
+            id="add_asset_description"
+            v-model="assetEntity.entityDescription"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <b-form-group
+        label="Comment:"
+        label-for="add_asset_comment"
+        >
+        <b-form-input
+            id="add_asset_comment"
+            v-model="assetEntity.entityComment"
+            type="text"
+            required
+        ></b-form-input>
+        </b-form-group>
+
+        <template v-slot:modal-footer="{}">
+            <b-button size="sm" variant="success" @click="updateAsset()">
+              Submit
+            </b-button>
+            <b-button size="sm" variant="danger" @click="cancel()">
+              Cancel
+            </b-button>
+        </template>
+    </b-modal>
+</template>
+</body>
+
+<script>
+    Vue.component('side_nav',{
+        template: '#side_nav',
+        props:['list'],
+        methods:{
+            findAssetList:function(e){
+                let classRefId = e.path[1].getAttribute('class_ref_id');
+                this.$parent.findAssetList(classRefId);
+            },
+            viewRecord:function(){
+                window.location.href="./recordPage";
+            },
+            toggleAddAssetClass:function(){
+                this.$bvModal.show('addAssetClassModal');
+            }
+        }
+    });
+    Vue.component('operation_board',{
+        template: '#operation_board',
+        data(){
+            return{
+                options:[
+                    {
+                        optionId:0,
+                        option:'entityTrackCode',
+                        lable:'Search by TrackCode'
+                    },
+                    {
+                        optionId:1,
+                        option:'entityName',
+                        lable:'Search by Name'
+                    },
+                    {
+                        optionId:2,
+                        option:'entityDefaultPosition',
+                        lable:'Search by DefaultPosition'
+                    },
+                    {
+                        optionId:3,
+                        option:'entityCurrentPosition',
+                        lable:'Search by CurrentPosition'
+                    },
+                    {
+                        optionId:4,
+                        option:'entityStatus',
+                        lable:'Search by Status'
+                    }
+                ],
+                optionId:'',
+                searchInfo:''
+            }
+        },
+        methods:{
+            chooseQueryWay:function(e){
+                let optionId = e.path[0].getAttribute('option_id');
+                this.optionId = optionId;
+                this.$refs['dropdown'].$refs.toggle.innerHTML=this.options[optionId].lable;
+            },
+            searchAssetList:function(){
+                if(this.optionId==''){
+                    alert('Please choose Search Way firstly!');
+                }
+                let query = {};
+                query[this.options[this.optionId].option]=this.searchInfo;
+                this.$parent.searchAssetList(query,function(data){
+                    if(!data.flag){
+                        alert('Operation Failed!\n'+data.message);
+                    }
+                });
+            },
+            toggleAddAsset:function(){
+                this.$bvModal.show('addAssetModal');
+            },
+            deleteAssetClass:function(){
+                this.$parent.deleteAssetClass(function(data){
+                    if(data.flag){
+                        alert('Operation Succeed!');
+                    }else{
+                        alert('Operation Failed!\n'+data.message);
+                    }
+                });
+            }
+        }
+    });
+
+    Vue.component('show_table',{
+        template: '#show_table',
+        props:['list'],
+        data(){
+            return{
+                fields:[
+                    {key:'entityTrackCode',label:'TrackCode'},
+                    {key:'entityName',label:'Name'},
+                    {key:'entityDefaultPosition',label:'Default Position'},
+                    {key:'entityCurrentPosition',label:'Current Position'},
+                    {key:'entityStatus',label:'Status'},
+                    {key:'entityDescription',label:'Description'},
+                    {key:'entityComment',label:'Comment'},
+                    {key:'operations',label:'Operations'},
+                ],
+                items:this.list
+            }
+        },
+        watch:{
+            list:function(){
+                this.items = this.list;
+            }
+        },
+        methods:{
+            deleteAsset:function(e){
+                let entityTrackCode = e.path[0].getAttribute('trackCode');
+                console.log(entityTrackCode);
+                this.$parent.deleteAsset(entityTrackCode,function(data){
+                    if(data.flag){
+                        alert('Operation Succeed!');
+                    }else{
+                        alert('Operation Failed!\n'+data.message);
+                    }
+                });
+            },
+            updateAsset:function(e){
+                let item = e.path[0].getAttribute('item');
+                let self = this
+                this.$parent.preUpdate(item,function(){
+                    self.$bvModal.show('updateAssetModal');
+                });
+            },
+            getItem:function(data){
+                return JSON.stringify(data);
+            }
+        }
+    });    
+
+    Vue.component('add_asset_class',{
+        template: '#add_asset_class',
+        data(){
+            return{
+                assetClass:{
+                    className:'',
+                    classDescription:''
+                }
+            }
+        },
+        methods:{
+            check:function(){
+                if(this.assetClass.className==''){
+                    alert('Class Name is necessary');
+                    return false;
+                }else{
+                    return true;
+                }
+            },
+            addAssetClass:function(){
+                let self = this;
+                if(this.check()){
+                    this.$parent.addAssetClass(this.assetClass,function(data){
+                        if(data.flag){
+                            alert('Operation Succeed!');
+                            self.$bvModal.hide('addAssetClassModal');
+                            self.clear();
+                        }else{
+                            alert('Operation Failed!\n'+data.message);
+                        }
+                    });
+                }
+                
+            },
+            clear:function(){
+                this.assetClass={
+                    className:'',
+                    classDescription:''
+                }
+            },
+            cancel:function(){
+                this.$bvModal.hide('addAssetClassModal');
+                this.clear();
+            }
+
+        }
+    })
+    Vue.component('add_asset_entity',{
+        template: '#add_asset_entity',
+        data(){
+            return{
+                assetEntity:{
+                    entityName:'',
+                    entityDefaultPosition:'',
+                    entityCurrentPosition:'',
+                    entityStatus:'',
+                    entityDescription:'',
+                    entityComment:''
+                },
+                statusList:[
+                    'Available', 
+                    'Faulty', 
+                    'Moved', 
+                    'Lost'
+                ]
+            }
+        },
+        methods:{
+            check:function(){
+                let e = this.assetEntity;
+                if(e.entityName==''){
+                    alert('Name is necessary!');
+                    return false;
+                }else if(e.entityDefaultPosition==''){
+                    alert('Default Position is necessary!');
+                    return false;
+                }else if(e.entityCurrentPosition==''){
+                    alert('Current Position is necessary!');
+                    return false;
+                }else if(e.entityStatus==''){
+                    alert('Status is necessary!');
+                    return false;
+                }else{
+                    return true;
+                }
+            },
+            clear:function(){
+                this.assetEntity={
+                    entityName:'',
+                    entityDefaultPosition:'',
+                    entityCurrentPosition:'',
+                    entityStatus:'',
+                    entityDescription:'',
+                    entityComment:''
+                };
+            },
+            cancel:function(){
+                this.$bvModal.hide('addAssetModal');
+                this.clear();
+            },
+            addAsset:function(){
+                let self = this;
+                if(this.check()){
+                    this.$parent.addAsset(this.assetEntity,function(data){
+                        if(data.flag){
+                            alert('Operation Succeed!');
+                            self.$bvModal.hide('addAssetModal');
+                            self.clear();
+                        }else{
+                            alert('Operation Failed!\n'+data.message);
+                        }
+                    });
+                }
+            }
+        }
+    })
+    Vue.component('update_asset_entity',{
+        template: '#update_asset_entity',
+        props:['entity'],
+        data(){
+            return{
+                // assetEntity:this.entity,
+                assetEntity:{
+                    entityName:'',
+                    entityDefaultPosition:'',
+                    entityCurrentPosition:'',
+                    entityStatus:'',
+                    entityDescription:'c',
+                    entityComment:'ao'
+                },
+                statusList:[
+                    'Available', 
+                    'Faulty', 
+                    'Moved', 
+                    'Lost'
+                ]
+            }
+        },
+        watch: {
+          entity:function(){
+              this.assetEntity = this.entity;
+          }  
+        },
+        methods:{
+            check:function(){
+                let e = this.assetEntity;
+                if(e.entityDefaultPosition==''){
+                    alert('Default Position is necessary!');
+                    return false;
+                }else if(e.entityCurrentPosition==''){
+                    alert('Current Position is necessary!');
+                    return false;
+                }else if(e.entityStatus==''){
+                    alert('Status is necessary!');
+                    return false;
+                }else{
+                    return true;
+                }
+            },
+            clear:function(){
+                this.assetEntity={
+                    entityName:'',
+                    entityDefaultPosition:'',
+                    entityCurrentPosition:'',
+                    entityStatus:'',
+                    entityDescription:'',
+                    entityComment:''
+                };
+            },
+            cancel:function(){
+                this.$bvModal.hide('updateAssetModal');
+                this.clear();
+            },
+            updateAsset:function(){
+                let self = this;
+                if(this.check()){
+                    this.$parent.updateAsset(this.assetEntity,function(data){
+                        if(data.flag){
+                            alert('Operation Succeed!');
+                            self.$bvModal.hide('updateAssetModal');
+                            self.clear();
+                        }else{
+                            alert('Operation Failed!\n'+data.message);
+                        }
+                    });
+                }
+            }
+        }
+    })
+    var vm = new Vue({
+        el:'#app',
+        data:{
+           assetClassList:'',
+           assetList:'',
+           currentClassRefId:'',
+           updatedAsset:''
+        },
+        methods:{
+            findAssetClassList:function(){
+                axios
+                .get('./assetClass')
+                .then(res=>{
+                    this.assetClassList = res.data.data;
+                })
+                .catch(function(error){
+                    console.log(error);
+                });
+            },
+            findAssetList:function(classRefId){
+                this.currentClassRefId = classRefId;
+                axios
+                .get('./asset/'+classRefId)
+                .then(res=>{
+                    this.assetList = res.data.data;
+                })
+                .catch(function(error){
+                    console.log(error);
+                });
+            },
+            addAssetClass:function(assetClass,callBack){
+                axios
+                .post('./assetClass',JSON.stringify(assetClass),{
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                })
+                .then(res => {
+                    if(res.data.flag){
+                        this.findAssetClassList();
+                    }
+                    callBack(res.data);
+                })
+                .catch(err => {
+                    console.log(err); 
+                })
+            },
+            searchAssetList:function(query,callback){
+                axios
+                .post('./asset/condition',JSON.stringify(query),{
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                })
+                .then(res => {
+                    if(res.data.flag){
+                        this.assetList = res.data.data;
+                    }
+                    callback(res.data);
+                })
+                .catch(err => {
+                    console.log(err); 
+                })
+            },
+            deleteAssetClass:function(callBack){
+                axios
+                .delete('./assetClass/'+this.currentClassRefId)
+                .then(res=>{
+                    if(res.data.flag){
+                        this.assetList='';
+                        this.currentClassRefId='';
+                        this.findAssetClassList();
+                    }
+                    callBack(res.data);
+                })
+                .catch(err => {
+                    console.log(err); 
+                })
+            },
+            addAsset:function(assetEntity,callBack){
+                if(this.currentClassRefId==''){
+                    alert('Please choose class firstly!');
+                    return;
+                }
+                assetEntity['classRefId']=this.currentClassRefId;
+                axios
+                .post('./asset',JSON.stringify(assetEntity),{
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                })
+                .then(res =>{
+                    if(res.data.flag){
+                        this.assetList='';
+                        this.findAssetList(this.currentClassRefId);
+                    }
+                    callBack(res.data);
+                })
+                .catch(err => {
+                    console.log(err); 
+                })
+            },
+            deleteAsset:function(entityTrackCode,callBack){
+                axios
+                .delete('./asset/'+entityTrackCode)
+                .then(res=>{
+                    if(res.data.flag){
+                        this.findAssetList(this.currentClassRefId);
+                    }
+                    callBack(res.data);
+                })
+                .catch(err => {
+                    console.log(err); 
+                });
+            },
+            preUpdate:function(item,callBack){
+                this.updatedAsset = JSON.parse(item);
+                callBack();
+            },
+            updateAsset:function(assetEntity,callBack){
+                axios
+                .patch('./asset',JSON.stringify(assetEntity),{
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                })
+                .then(res =>{
+                    if(res.data.flag){
+                        this.findAssetList(this.currentClassRefId);
+                    }
+                    callBack(res.data);
+                })
+                .catch(err => {
+                    console.log(err); 
+                })
+            }
+
+        },
+        mounted () {
+            this.findAssetClassList();
+        }
+    });
+</script>
+</html>

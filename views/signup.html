@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="../../css/stylesheet.css">
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap-vue.min.css" />
+    
+    <script src="../../js/vue.min.js"></script>
+    <script src="../../js/bootstrap-vue.min.js"></script>
+    <script src="../../js/bootstrap-vue-icons.min.js"></script>
+    <script src="../../js/axios.min.js"></script>
+ 
+    <title>sign up</title>
+</head>
+
+<body>
+    <div id="app">
+        <div class="signup-form">
+            <form action="" method="post">
+                <h2 style="color: cadetblue;text-align: left;">Welcome to LogistiX</h2>
+                <h5 style="color: cadetblue;">Create an LogistiX Account</h5>
+                
+                <form class="data-form" id="data-form">
+                    <div class="form-group">
+                        <label for="">Email*</label>
+                        <input type="email" class="form-control" id="email" v-model="email" name="email" placeholder="Email"
+                            required="required">
+                    </div>
+                    <div class="form-group">
+                        <label for="">Username*</label>
+                        <input type="text" class="form-control" id="user" v-model="username" name="username" placeholder="Username"
+                            required="required">
+                    </div>
+                    <div class="form-group">
+                        <label for="">Password*</label>
+                        <input type="password" class="form-control" id="pass" v-model="password" name="password" placeholder="Password"
+                            required="required">
+                    </div>
+                    <div class="form-group">
+                        <label for="">Confirm password*</label>
+                        <input type="password" class="form-control" id="confirm_pass" v-model="confirmPassword" name="confirm_password"
+                            placeholder="Confirm Password" required>
+                    </div>
+                    <div class="form-group">
+                        <a id="sub" class="btn btn-success btn-lg btn-block" @click="register">Register Now</a>
+                    </div>
+                </form>
+            </form>
+            <div class="text-center">Already have an account? <a href="./loginPage">Sign in</a></div>
+        </div>
+    </div>
+</body>
+  
+<script type="text/javascript">
+new Vue({
+        el:'#app',
+        data:{
+            username:'',
+            email:'',
+            password:'',
+            confirmPassword:''
+        },
+        methods: {
+            register:function(){
+                if(this.username===''||this.password===''||this.confirmPassword===''||this.email===''){
+                    alert("All items cannot be empty.");
+                    return;
+                }
+                if(this.password!==this.confirmPassword){
+                    alert("Password need to be the same.");
+                    return;
+                }
+                axios
+                .post('./registerByViewer.action',{
+                    username:this.username,
+                    password:this.password,
+                    email:this.email
+                },{
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                })
+                .then(function(response){
+                    if(response.data.flag){
+                        alert('Sign up successfully!');
+                        window.location.href='./loginPage';
+                    }else{
+                        alert('Fail to sign up, please try again!');
+                    }
+                })
+                .catch(function (error) { // 请求失败处理
+                    console.log(error);
+                });
+            }
+        }
+    });
+</script>
+
+</html>

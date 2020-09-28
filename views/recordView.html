@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>LogistiX Manager System</title>
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap-vue.min.css" />
+    
+    <script src="../../js/vue.min.js"></script>
+    <script src="../../js/bootstrap-vue.min.js"></script>
+    <script src="../../js/bootstrap-vue-icons.min.js"></script>
+    <script src="../../js/axios.min.js"></script>
+</head>
+<body>
+    <div style="width: 98%; margin: auto;" id="app">
+        <div class="row">
+            <div class="col-2">
+
+            </div>
+            <div class="col-8">
+                <template v-for='item in recordList'>
+                    <div style="margin: 10px auto 10px auto;">
+                        <b-card
+                        border-variant="primary"
+                        :header="item.recordTime"
+                        header-bg-variant="primary"
+                        header-text-variant="white"
+                        >
+                            <b-card-title>JobNumber:</b-card-title>
+                            <b-card-text>{{item.jobNumber}}</b-card-text>
+                            <b-card-title>RealName:</b-card-title>
+                            <b-card-text>{{item.realName}}</b-card-text>
+                            <b-card-title>RecordInfo:</b-card-title>
+                            <b-card-text>{{item.recordInfo}}</b-card-text>
+                        </b-card>
+                    </div>      
+                </template>
+            </div>
+            <div class="col-2">
+
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+var vm = new Vue({
+    el:'#app',
+    data:{
+        recordList:''
+    },
+    methods: {
+        findRecordList:function(){
+            axios
+            .get('./record')
+            .then(res=>{
+                this.recordList = res.data.data;
+                console.log(this.recordList);
+            })
+            .catch(function(error){
+                console.log(error);
+            });
+        }
+    },
+    mounted () {
+        this.findRecordList();
+    }
+});  
+</script>
+</html>
+

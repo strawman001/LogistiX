@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <link type="text/css" rel="stylesheet" href="../../css/stylesheet.css">
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap.min.css" />
+    <link type="text/css" rel="stylesheet" href="../../css/bootstrap-vue.min.css" />
+    
+    <script src="../../js/vue.min.js"></script>
+    <script src="../../js/bootstrap-vue.min.js"></script>
+    <script src="../../js/bootstrap-vue-icons.min.js"></script>
+    <script src="../../js/axios.min.js"></script>
+    <title>LogistiX Sign In</title>
+</head>
+
+<body>
+    <div id="app">
+        <div class="signup-form">
+            <form action="" method="post">
+                <h2 style="color: cadetblue;text-align: left;">Sign in LogistiX</h2>
+
+                <div class="form-group">
+                    <label for="">Username*</label>
+                    <input type="text" class="form-control" id="user" v-model="username" name="username" placeholder="Username"
+                        required="required">
+                </div>
+                <div class="form-group">
+                    <label for="">Password*</label>
+                    <input type="password" class="form-control" id="pass" v-model="password" name="password" placeholder="Password"
+                        required="required">
+                </div>
+                <b-form-group
+                    label-cols-sm="3"
+                    label="Sign in type:"
+                >
+                    <b-form-radio-group
+                        class="pt-2"
+                        :options="['Manager', 'Viewer']"
+                        v-model="type"
+                    />
+                </b-form-group>
+                <div class="form-group">
+                    <a id="sub" class="btn btn-success btn-lg btn-block" @click="login">Log In</a>
+                </div>
+            </form>
+
+            <div class="text-center">Need an account? <a href="./registerPage">Sign up</a></div>
+        </div>
+    </div>
+</body>
+<script>
+    new Vue({
+        el:'#app',
+        data:{
+            username:'',
+            password:'',
+            type:''
+        },
+        methods: {
+            login:function(){
+                if(this.username===''||this.password===''||this.type===''){
+                    alert("Username or Password or Type cannot be empty.");
+                    return;
+                }
+                var url = '';
+                if(this.type==='Manager'){
+                    url = './loginByManager.action';
+                }else{
+                    url = './loginByViewer.action';
+                }
+                axios
+                .post(url,{
+                    username:this.username,
+                    password:this.password
+                },{
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                })
+                .then(function(response){
+                    console.log(response.data);
+                    if(response.data.flag){
+                        if(response.data.type==='Manager')
+                            window.location.href='../view/manager/managerPage';
+                        else
+                            window.location.href='../view/viewer/viewerPage';
+                    }
+                })
+                .catch(function (error) { // 请求失败处理
+                    console.log(error);
+                });
+            }
+        }
+    });
+</script>
+
+</html>
